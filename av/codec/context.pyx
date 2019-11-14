@@ -42,14 +42,14 @@ cdef CodecContext wrap_codec_context(lib.AVCodecContext *c_ctx, const lib.AVCode
     return py_ctx
 
 
-ThreadType = define_enum('ThreadType', (
+CodecContextThreadType = define_enum('CodecContextThreadType', (
     ('NONE', 0),
     ('FRAME', lib.FF_THREAD_FRAME),
     ('SLICE', lib.FF_THREAD_SLICE),
     ('AUTO', lib.FF_THREAD_SLICE | lib.FF_THREAD_FRAME),
 ), is_flags=True)
 
-SkipType = define_enum('SkipType', (
+CodecContextSkipType = define_enum('CodecContextSkipType', (
     ('NONE', lib.AVDISCARD_NONE),
     ('DEFAULT', lib.AVDISCARD_DEFAULT),
     ('NONREF', lib.AVDISCARD_NONREF),
@@ -59,7 +59,7 @@ SkipType = define_enum('SkipType', (
     ('ALL', lib.AVDISCARD_ALL),
 ))
 
-Flags = define_enum('Flags', (
+CodecContextFlags = define_enum('CodecContextFlags', (
     ('NONE', 0),
     ('UNALIGNED', lib.AV_CODEC_FLAG_UNALIGNED),
     ('QSCALE', lib.AV_CODEC_FLAG_QSCALE),
@@ -81,7 +81,7 @@ Flags = define_enum('Flags', (
     ('CLOSED_GOP', lib.AV_CODEC_FLAG_CLOSED_GOP),
 ), is_flags=True)
 
-Flags2 = define_enum('Flags2', (
+CodecContextFlags2 = define_enum('CodecContextFlags2', (
     ('NONE', 0),
     ('FAST', lib.AV_CODEC_FLAG2_FAST),
     ('NO_OUTPUT', lib.AV_CODEC_FLAG2_NO_OUTPUT),
@@ -130,7 +130,7 @@ cdef class CodecContext(object):
     def _set_flags(self, value):
         self.ptr.flags = value
 
-    flags = Flags.property(_get_flags, _set_flags)
+    flags = CodecContextFlags.property(_get_flags, _set_flags)
 
     unaligned = flags.flag_property('UNALIGNED')
     qscale = flags.flag_property('QSCALE')
@@ -157,7 +157,7 @@ cdef class CodecContext(object):
     def _set_flags2(self, value):
         self.ptr.flags2 = value
 
-    flags2 = Flags2.property(_get_flags2, _set_flags2)
+    flags2 = CodecContextFlags2.property(_get_flags2, _set_flags2)
 
     fast = flags2.flag_property('FAST')
     no_output = flags2.flag_property('NO_OUTPUT')
@@ -525,19 +525,19 @@ cdef class CodecContext(object):
             self.ptr.thread_count = value
 
     property thread_type:
-        """One of :class:`.ThreadType`."""
+        """One of :class:`.CodecContextThreadType`."""
         def __get__(self):
-            return ThreadType.get(self.ptr.thread_type, create=True)
+            return CodecContextThreadType.get(self.ptr.thread_type, create=True)
 
         def __set__(self, value):
             if lib.avcodec_is_open(self.ptr):
                 raise RuntimeError("Cannot change thread_type after codec is open.")
-            self.ptr.thread_type = ThreadType[value].value
+            self.ptr.thread_type = CodecContextThreadType[value].value
 
     property skip_frame:
-        """One of :class:`.SkipType`."""
+        """One of :class:`.CodecContextSkipType`."""
         def __get__(self):
-            return SkipType._get(self.ptr.skip_frame, create=True)
+            return CodecContextSkipType._get(self.ptr.skip_frame, create=True)
 
         def __set__(self, value):
-            self.ptr.skip_frame = SkipType[value].value
+            self.ptr.skip_frame = CodecContextSkipType[value].value
