@@ -2,28 +2,42 @@
 Containers
 ==========
 
+
+Generic
+-------
+
+.. currentmodule:: av.container
+
 .. automodule:: av.container
 
-.. autoclass:: av.container.Container
-    :members:
+.. autoclass:: Container
+
+Flags
+~~~~~
+
+.. flagtable::
+    :cls: av.container.core:Container
+    :enum: av.container.core:ContainerContextFlags
 
 
 Input Containers
 ----------------
 
-.. autoclass:: av.container.InputContainer
+.. autoclass:: InputContainer
     :members:
 
 
 Output Containers
 -----------------
 
-.. autoclass:: av.container.OutputContainer
+.. autoclass:: OutputContainer
     :members:
 
 
 Formats
 -------
+
+.. currentmodule:: av.format
 
 .. automodule:: av.format
 

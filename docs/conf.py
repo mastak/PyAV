@@ -14,6 +14,7 @@ from __future__ import print_function
 
 from docutils import nodes
 import logging
+import math
 import os
 import re
 import sys
@@ -22,6 +23,7 @@ import xml.etree.ElementTree as etree
 
 import sphinx
 from sphinx import addnodes
+from sphinx.util.docutils import SphinxDirective
 
 
 logging.basicConfig()
@@ -252,6 +254,111 @@ autodoc_default_options = {
 todo_include_todos = True
 
 
+class PyInclude(SphinxDirective):
+
+    has_content = True
+
+    def run(self):
+
+
+        source = '\n'.join(self.content)
+        output = []
+        def write(*content, sep=' ', end='\n'):
+            output.append(sep.join(map(str, content)) + end)
+
+        namespace = dict(write=write)
+        exec(compile(source, '<docs>', 'exec'), namespace, namespace)
+
+        output = ''.join(output).splitlines()
+        self.state_machine.insert_input(output, 'blah')
+
+        return [] #[nodes.literal('hello', repr(content))]
+
+
+def load_entrypoint(name):
+    mod_name, attrs = name.split(':')
+    attrs = attrs.split('.')
+    obj = __import__(mod_name, fromlist=['.'])
+    for attr in attrs:
+        obj = getattr(obj, attr)
+    return obj
+
+class FlagTable(SphinxDirective):
+
+    # required_arguments = 2
+    option_spec = dict(
+        cls=lambda x: x,
+        attr=lambda x: x,
+        enum=lambda x: x,
+    )
+
+    def run(self):
+
+        cls = load_entrypoint(self.options['cls'])
+        enum = load_entrypoint(self.options['enum'])
+
+        properties = {}
+        for name, value in vars(cls).items():
+            if isinstance(value, property):
+                try:
+                    item = value._enum_item
+                except AttributeError:
+                    pass
+                else:
+                    if isinstance(item, enum):
+                        properties[item] = name
+
+        ncols = 4
+        colwidths = [10, 10, 10, 70]
+
+        table = nodes.table()
+
+        tgroup = nodes.tgroup(cols=ncols)
+        table += tgroup
+
+        for width in colwidths:
+            tgroup += nodes.colspec(colwidth=width)
+
+        thead = nodes.thead()
+        tgroup += thead
+
+        tbody = nodes.tbody()
+        tgroup += tbody
+
+        def makerow(*texts):
+            row = nodes.row()
+            for text in texts:
+                row += nodes.entry('', nodes.paragraph('', str(text)))
+            return row
+
+        thead += makerow('Attribute', 'Flag Name', 'Flag Value', 'Docstring')
+
+        for flag in enum:
+
+            item = enum[flag]
+            try:
+                attr = properties[item]
+            except KeyError:
+                continue
+
+            value = item.value
+            try:
+                pow_ = math.log(value, 2)
+            except ValueError:
+                pass
+            else:
+                if int(pow_) == pow_:
+                    value = '1 << {}'.format(int(pow_))
+
+            doc = item.__doc__ or '-'
+
+            tbody += makerow(attr, flag, value, doc)
+
+        return [table]
+
+
+
+
 doxylink = {}
 ffmpeg_tagfile = os.path.abspath(os.path.join(__file__, '..', '_build', 'doxygen', 'tagfile.xml'))
 if not os.path.exists(ffmpeg_tagfile):
@@ -348,6 +455,9 @@ def doxylink_create_handler(app, file_name, url_base):
 def setup(app):
 
     app.add_stylesheet('custom.css')
+
+    app.add_directive('flagtable', FlagTable)
+    app.add_directive('pyinclude', PyInclude)
 
     skip = os.environ.get('PYAV_SKIP_DOXYLINK')
     for role, (filename, url_base) in doxylink.items():
