@@ -203,7 +203,7 @@ import errno
 import os
 
 import av
-from av.datasets import fate, fate as fate_suite
+from av.datasets import fate, fate as fate_suite, curated
 
 from tests import common
 from tests.common import sandboxed as _sandboxed
@@ -220,6 +220,8 @@ except OSError as e:
     if e.errno != errno.EEXIST:
         raise
 os.chdir(here)
+
+video_path = curated('pexels/time-lapse-video-of-night-sky-857195.mp4')
 
 '''
 
@@ -308,8 +310,8 @@ class FlagTable(SphinxDirective):
                     if isinstance(item, enum):
                         properties[item] = name
 
-        ncols = 4
-        colwidths = [10, 10, 10, 70]
+        colwidths = [15, 15, 70]
+        ncols = len(colwidths)
 
         table = nodes.table()
 
@@ -331,7 +333,12 @@ class FlagTable(SphinxDirective):
                 row += nodes.entry('', nodes.paragraph('', str(text)))
             return row
 
-        thead += makerow('Attribute', 'Flag Name', 'Flag Value', 'Docstring')
+        thead += makerow(
+            '{} Attribute'.format(cls.__name__),
+            '{} Name'.format(enum.__name__),
+            #'Flag Value',
+            'Meaning in FFmpeg',
+        )
 
         for flag in enum:
 
@@ -352,7 +359,12 @@ class FlagTable(SphinxDirective):
 
             doc = item.__doc__ or '-'
 
-            tbody += makerow(attr, flag, value, doc)
+            tbody += makerow(
+                attr,
+                flag,
+                #value,
+                doc,
+            )
 
         return [table]
 

@@ -289,7 +289,9 @@ cdef class Container(object):
     def _set_flags(self, value):
         self.ptr.flags = value
 
-    flags = ContainerContextFlags.property(_get_flags, _set_flags)
+    flags = ContainerContextFlags.property(_get_flags, _set_flags,
+        doc=":class:`av.enum.EnumFlag` set for :ffmpeg:`AVFormatContext.flags`."
+    )
 
     gen_pts = flags.flag_property('GENPTS')
     ign_idx = flags.flag_property('IGNIDX')
